@@ -7,7 +7,7 @@
 <meta name="force-rendering" content="webkit">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0e0f12">
-<title>行商浪人 · 角色卡创建器 3.0（核心规则书 V0.3）</title>
+<title>行商浪人 · 角色卡创建器 3.1（核心规则书 V0.3）</title>
 <link rel="icon" href="assets/img/favicon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -21,7 +21,7 @@
     <img class="splash-aquila" src="assets/img/aquila.png" alt="帝国双头鹰">
     <p class="splash-kicker">ROGUE TRADER · CORE RULEBOOK V0.3</p>
     <h2 class="splash-title">行商浪人</h2>
-    <p class="splash-sub">角色卡创建器 <b>3.0</b></p>
+    <p class="splash-sub">角色卡创建器 <b>3.1</b></p>
     <div class="splash-bar"><i></i></div>
     <p class="splash-hint">点击任意处进入 · 角色自动保存在本地</p>
   </div>
@@ -41,20 +41,23 @@
   <div class="brand">
     <img class="brand-mark" src="assets/img/aquila-mark.png" alt="">
     <div class="brand-text">
-      <h1>行商浪人 <span>角色卡创建器 3.0</span></h1>
+      <h1>行商浪人 <span>角色卡创建器 3.1</span></h1>
       <p>Rogue Trader · 核心规则书 V0.3 · 技能 P112-132 / 天赋 P133-160 / 军械库 P166-226</p>
     </div>
   </div>
   <div class="top-actions">
-    <div class="seg" id="themeSeg" role="group" aria-label="配色主题">
-      <button class="seg-btn on" data-theme="gothic" onclick="App.setTheme('gothic')">帝国哥特</button>
-      <button class="seg-btn" data-theme="steel" onclick="App.setTheme('steel')">机仆冷钢</button>
-      <button class="seg-btn" data-theme="void" onclick="App.setTheme('void')">虚空赤褐</button>
+    <div class="seg theme-icons" id="themeSeg" role="group" aria-label="配色主题（六套）">
+      <button class="thm on" data-theme="gothic" title="帝国哥特" aria-label="帝国哥特配色" aria-pressed="true" onclick="App.setTheme('gothic')"><i class="sw" aria-hidden="true"></i></button>
+      <button class="thm" data-theme="steel" title="机仆冷钢" aria-label="机仆冷钢配色" aria-pressed="false" onclick="App.setTheme('steel')"><i class="sw" aria-hidden="true"></i></button>
+      <button class="thm" data-theme="void" title="虚空赤褐" aria-label="虚空赤褐配色" aria-pressed="false" onclick="App.setTheme('void')"><i class="sw" aria-hidden="true"></i></button>
+      <button class="thm" data-theme="crimson" title="血契绯红" aria-label="血契绯红配色" aria-pressed="false" onclick="App.setTheme('crimson')"><i class="sw" aria-hidden="true"></i></button>
+      <button class="thm" data-theme="verdant" title="苔原深绿" aria-label="苔原深绿配色" aria-pressed="false" onclick="App.setTheme('verdant')"><i class="sw" aria-hidden="true"></i></button>
+      <button class="thm" data-theme="amethyst" title="紫晶圣咏" aria-label="紫晶圣咏配色" aria-pressed="false" onclick="App.setTheme('amethyst')"><i class="sw" aria-hidden="true"></i></button>
     </div>
-    <div class="toggle-row" role="group" aria-label="音效与动效">
-      <button class="btn ghost tbtn on" id="sfxBtn" onclick="App.toggleSfx()" aria-pressed="true">音效</button>
-      <button class="btn ghost tbtn" id="ambBtn" onclick="App.toggleAmbient()" aria-pressed="false">环境音</button>
-      <button class="btn ghost tbtn on" id="fxBtn" onclick="App.toggleFx()" aria-pressed="true">动效</button>
+    <div class="toggle-row" role="group" aria-label="音效、音乐与动效">
+      <button class="btn ghost tbtn on" id="sfxBtn" onclick="App.toggleSfx()" aria-pressed="true" title="音效开关">音效</button>
+      <button class="btn ghost tbtn" id="bgmBtn" onclick="App.toggleMusic()" aria-pressed="false" title="背景音乐开关">音乐</button>
+      <button class="btn ghost tbtn on" id="fxBtn" onclick="App.toggleFx()" aria-pressed="true" title="过场与动效开关">动效</button>
     </div>
     <button class="btn ghost" onclick="App.replayIntro()">重看过场</button>
     <button class="btn ghost" onclick="window.print()">打印</button>
@@ -71,17 +74,32 @@
 <aside id="drawer" class="drawer" aria-live="polite"></aside>
 <div id="tip" class="tip"></div>
 
+<!-- 背景音乐迷你播放器（开启音乐时浮出） -->
+<div id="bgmBar" class="bgmbar" role="group" aria-label="背景音乐">
+  <img class="bgm-cover" id="bgmCover" src="assets/img/bgm-cover.jpg" alt="">
+  <div class="bgm-text">
+    <b class="bgm-title" id="bgmTitle">Clash of Convictions</b>
+    <span class="bgm-artist" id="bgmArtist">Nikolay Filipovich</span>
+    <i class="bgm-prog"><u id="bgmProg"></u></i>
+  </div>
+  <input class="bgm-vol" id="bgmVol" type="range" min="0" max="100" value="45"
+         oninput="App.setMusicVolume(this.value)" aria-label="音乐音量">
+  <button class="bgm-x" id="bgmX" onclick="App.toggleMusic()" aria-label="停止音乐" title="停止音乐">×</button>
+</div>
+
 <footer class="foot">
   <img class="foot-mark" src="assets/img/aquila-mark.png" alt="">
   <p>规则与数据取自《行商浪人核心规则书 V0.3》（第一章创建角色 P6-36、第二章职业道途 P37-111、第三章技能 P112-132、第四章天赋 P133-160、第五章军械库 P166-226）。</p>
-  <p>角色自动保存到浏览器本地（localStorage），可在“角色卡”页导出 / 导入 JSON。音效由浏览器实时合成，无外部音频文件。</p>
-  <p class="foot-ver">版本 3.0 · 音效 / 过场动画 / 角色卡折叠 / 界面重制</p>
+  <p>角色自动保存到浏览器本地（localStorage），可在“角色卡”页导出 / 导入 JSON。界面音效由浏览器实时合成；背景音乐为本地文件 <code>assets/audio/bgm.mp3</code>（可用 <code>tools/build_bgm.py</code> 从 .ncm 重新生成），默认关闭。</p>
+  <p class="foot-ver">版本 3.1 · 六套配色 / 背景音乐 / 九维雷达图 / 音效 / 过场动画 / 角色卡折叠</p>
 </footer>
 
 <script src="data/bundle.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/audio.js"></script>
+<script src="assets/audio/bgm-meta.js"></script>
+<script src="js/music.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/app.js"></script>
 <script>

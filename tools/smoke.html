@@ -12,23 +12,66 @@
 <script src="../js/rules.js"></script>
 <script src="../js/calc.js"></script>
 <script src="../js/audio.js"></script>
+<script src="../assets/audio/bgm-meta.js"></script>
+<script src="../js/music.js"></script>
 <script src="../js/fx.js"></script>
 <script src="../js/app.js"></script>
 <script>
-/* 冒烟测试：用 Edge 无头模式打开本页，看 <pre id="log"> 是否全部 OK
-   msedge --headless=new --dump-dom file:///D:/AIsoft/rt-chargen/tools/smoke.html */
+/* 冒烟测试：用无头浏览器打开本页，看 <pre id="log"> 是否全部 OK
+   chrome --headless=new --dump-dom file:///.../tools/smoke.html
+   注意 1：本页把 alert/confirm/prompt 全部桩掉——无头模式没人点「确定」，alert 会永久卡住渲染进程，
+           --dump-dom 就永远拿不到 DOM。
+   注意 2：AudioContext、media.play/pause 也换成了桩，否则真播 5 MB 的 mp3 会让渲染线程挂住。
+   注意 3：从 PowerShell 直接接管道（$out = & chrome ...）可能拿不到 DOM，请用
+           Start-Process -RedirectStandardOutput 或 cmd 重定向到文件。 */
 const log = [];
+/* 无头模式没人点弹窗：alert 会同步阻塞渲染进程，导致 --dump-dom 永远拿不到 DOM。
+   这里统一桩掉，只记录，不阻塞。 */
+const dialogs = [];
+window.alert = function (m) { dialogs.push('alert: ' + m); };
+window.confirm = function (m) { dialogs.push('confirm: ' + m); return false; };
+window.prompt = function (m) { dialogs.push('prompt: ' + m); return null; };
 function t(name, fn) {
-  try { fn(); log.push('OK   ' + name); }
+  try {
+    console.log('[t] ' + log.length + ' ' + name);
+    fn();
+    log.push('OK   ' + name);
+  }
   catch (e) { log.push('FAIL ' + name + ' :: ' + (e && e.message)); }
 }
 const cards = () => document.querySelectorAll('.gcard');
 const gearId = n => RTData.gear.find(g => g.name === n).id;
 
+/* 无头环境没有音频输出设备，真播 5 MB 的 mp3 会让渲染进程挂住；
+   这里把 media 元素的实际播放与音频图连线都替换成空实现，只测逻辑与状态。 */
+HTMLMediaElement.prototype.play = function () { this.__stubPlayed = true; return Promise.resolve(); };
+HTMLMediaElement.prototype.pause = function () { this.__stubPlayed = false; };
+(function () {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (AC && AC.prototype.createMediaElementSource) {
+    AC.prototype.createMediaElementSource = function () { return this.createGain(); };
+  }
+})();
+
 t('渲染 步骤1 属性', () => App.go('attr'));
 t('掷骰全部', () => App.rollAll());
-t('切点数分配', () => App.setMode('buy'));
+t('切点数分配', () => {
+  /* 掷骰后的基础值已远超 100 点预算，这里先回到每项 25 的干净状态 */
+  RTRules.ATTRS.forEach(x => App.setBase(x.k, 25));
+  App.setMode('buy');
+});
 t('加点', () => { App.alloc('WS', 1); App.alloc('Ag', 1); });
+t('加点受 100 点上限约束', () => {
+  let raised = 0;
+  const oldAlert = window.alert;
+  window.alert = function () { raised++; };
+  try {
+    /* 9 项每项最多 +20；先把 5 项加满 = 100 点用尽，第 101 点必须被拦下 */
+    ['WS', 'BS', 'S', 'T', 'Ag'].forEach(k => { for (let i = 0; i < 20; i++) App.alloc(k, 1); });
+    App.alloc('Int', 1);
+  } finally { window.alert = oldAlert; }
+  if (!raised) throw new Error('未触发上限提示');
+});
 t('渲染 步骤2 起源', () => App.go('origin'));
 t('选择家园世界', () => App.pickOrigin('homeworld', 'death'));
 t('选择生而有权', () => App.pickOrigin('birthright', 'mercenary'));
@@ -205,12 +248,68 @@ t('HUD 含计数动画数据', () => {
   if (!document.querySelectorAll('#hud [data-count]').length) throw new Error('缺 data-count');
 });
 
+/* ---------- 3.1：六套配色 / 背景音乐 / 九维雷达 ---------- */
+t('主题按钮为六枚无文字色环', () => {
+  const seg = document.getElementById('themeSeg');
+  if (!seg) return;                       // smoke 页没有页眉，跳过
+  const btns = seg.querySelectorAll('.thm');
+  if (btns.length !== 6) throw new Error('主题按钮数 ' + btns.length);
+  for (let i = 0; i < btns.length; i++) {
+    if (btns[i].textContent.trim()) throw new Error('按钮仍有文字：' + btns[i].textContent);
+    if (!btns[i].getAttribute('aria-label')) throw new Error('缺无障碍标签');
+  }
+});
+t('六套主题都能应用', () => {
+  ['gothic', 'steel', 'void', 'crimson', 'verdant', 'amethyst'].forEach((n, i) => {
+    App.setTheme(n);
+    if (document.body.getAttribute('data-theme') !== n) throw new Error('主题未生效 ' + n);
+    const cs = getComputedStyle(document.body);
+    const bg = cs.backgroundColor;
+    if (!bg || bg === 'rgba(0, 0, 0, 0)') throw new Error('主题背景未取到 ' + n);
+    const g = cs.getPropertyValue('--gold').trim();
+    if (!g) throw new Error('缺 --gold ' + n);
+  });
+  App.setTheme('gothic');
+});
+t('背景音乐模块可用', () => {
+  if (!window.RTMusic) throw new Error('音乐模块缺失');
+  const st = RTMusic.state();
+  if (!st.title) throw new Error('缺曲名');
+  if (!RTMusic.available()) throw new Error('音频被判定为不可用');
+});
+t('音乐音量可调', () => {
+  const was = RTMusic.volume();
+  RTMusic.setVolume(0.3);
+  if (Math.abs(RTMusic.volume() - 0.3) > 1e-6) throw new Error('音量未生效');
+  RTMusic.setVolume(was);
+});
+t('音乐开关不抛异常', () => {
+  App.toggleMusic();
+  App.toggleMusic();
+});
+t('角色卡含九维雷达图', () => {
+  App.go('sheet');
+  const svg = document.querySelector('#sheet .sheet-radar svg.radar');
+  if (!svg) throw new Error('缺雷达图');
+  const poly = svg.querySelector('polygon.radar-area');
+  if (!poly) throw new Error('缺数据多边形');
+  const pts = poly.getAttribute('points').trim().split(/\s+/);
+  if (pts.length !== 9) throw new Error('顶点数 ' + pts.length);
+  if (svg.querySelectorAll('circle.radar-dot').length !== 9) throw new Error('数据点不是 9 个');
+  if (svg.querySelectorAll('text.radar-lb').length !== 9) throw new Error('轴标签不是 9 个');
+  const key = document.querySelectorAll('#sheet .radar-key li');
+  if (key.length !== 9) throw new Error('图例不是 9 项');
+  if (!/WS/.test(svg.textContent) || !/Fel/.test(svg.textContent)) throw new Error('缺属性缩写');
+});
+
 document.getElementById('log').textContent = log.join('\n');
 const okN = log.filter(x => x.startsWith('OK')).length;
 const failN = log.length - okN;
 document.title = failN ? 'SMOKE FAIL' : 'SMOKE PASS';
 /* 供无头模式断言：纯 ASCII，避免控制台编码干扰 */
 document.body.setAttribute('data-smoke', okN + '/' + log.length);
+/* 诊断用：本次跑到的弹窗（含被桩掉的），方便定位无头阻塞 */
+document.body.setAttribute('data-dialogs', dialogs.join(' | ').slice(0, 400));
 </script>
 </body></html>
 

@@ -1,22 +1,22 @@
-/* 行商浪人角色卡 —— 音效（3.0）
+/* 行商浪人角色卡 —— 音效（3.1）
  * 全部用 WebAudio 现场合成，不依赖任何音频文件：
  *   click 轻按 / page 翻页 / open 抽屉展开 / close 抽屉收起
  *   dice 掷骰 / buy 购买 / error 拒绝 / rank 等阶提升 / theme 换主题
+ * 背景音乐由独立模块 js/music.js 负责（3.1 起取代原来的合成环境低鸣）。
  * 浏览器要求先有用户手势才能出声，故 AudioContext 延迟到首次点击/按键时创建。
  */
 window.RTSfx = (function () {
   const PREF = 'rt-chargen-sfx';
   const AC = window.AudioContext || window.webkitAudioContext;
 
-  let ctx = null, master = null, noiseBuf = null, amb = null;
-  let prefs = { on: true, amb: false };
+  let ctx = null, master = null, noiseBuf = null;
+  let prefs = { on: true };
 
   try {
     const raw = localStorage.getItem(PREF);
     if (raw) {
       const p = JSON.parse(raw) || {};
       prefs.on = p.on !== false;
-      prefs.amb = !!p.amb;
     }
   } catch (e) { /* 隐私模式 */ }
 
@@ -143,61 +143,7 @@ window.RTSfx = (function () {
     try { fn(); } catch (e) { /* 无声也不影响功能 */ }
   }
 
-  /* 环境低鸣：两个失谐低频 + 一层过滤噪声，音量很小，默认关闭 */
-  function startAmbient() {
-    if (!prefs.on || !ensure() || amb) return;
-    const t0 = ctx.currentTime;
-    const out = ctx.createGain();
-    out.gain.setValueAtTime(0.0001, t0);
-    out.gain.exponentialRampToValueAtTime(0.16, t0 + 2.2);
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 260;
-    lp.connect(out);
-    out.connect(master);
-
-    const oscs = [];
-    [[52, 'sine'], [78.5, 'triangle'], [104, 'sine']].forEach(function (pair, i) {
-      const o = ctx.createOscillator();
-      o.type = pair[1];
-      o.frequency.value = pair[0] + (i - 1) * 0.6;
-      const g = ctx.createGain();
-      g.gain.value = i === 2 ? 0.06 : 0.14;
-      o.connect(g); g.connect(lp);
-      o.start(t0);
-      oscs.push(o);
-    });
-
-    const src = ctx.createBufferSource();
-    src.buffer = noise();
-    src.loop = true;
-    const bp = ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.value = 420;
-    bp.Q.value = 0.6;
-    const ng = ctx.createGain();
-    ng.gain.value = 0.05;
-    src.connect(bp); bp.connect(ng); ng.connect(lp);
-    src.start(t0);
-
-    amb = { out: out, oscs: oscs, src: src };
-  }
-
-  function stopAmbient() {
-    if (!amb || !ctx) { amb = null; return; }
-    const a = amb;
-    amb = null;
-    try {
-      const t0 = ctx.currentTime;
-      a.out.gain.cancelScheduledValues(t0);
-      a.out.gain.setValueAtTime(Math.max(0.0001, a.out.gain.value), t0);
-      a.out.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9);
-      setTimeout(function () {
-        a.oscs.forEach(function (o) { try { o.stop(); } catch (e) { /* 忽略 */ } });
-        try { a.src.stop(); } catch (e) { /* 忽略 */ }
-      }, 1100);
-    } catch (e) { /* 忽略 */ }
-  }
+  /* 环境低鸣已移除：3.1 起由 js/music.js 播放真正的背景音乐 */
 
   return {
     play: play,
@@ -206,17 +152,9 @@ window.RTSfx = (function () {
     setEnabled: function (v) {
       prefs.on = !!v;
       savePrefs();
-      if (!prefs.on) { stopAmbient(); prefs.amb = false; savePrefs(); }
-      else { ensure(); play('click'); }
+      if (prefs.on) { ensure(); play('click'); }
     },
     toggle: function () { this.setEnabled(!prefs.on); return prefs.on; },
-    ambientOn: function () { prefs.amb = true; savePrefs(); startAmbient(); },
-    ambientOff: function () { prefs.amb = false; savePrefs(); stopAmbient(); },
-    ambientEnabled: function () { return !!prefs.amb; },
-    toggleAmbient: function () {
-      if (prefs.amb) { this.ambientOff(); return false; }
-      this.ambientOn(); return true;
-    },
     sounds: Object.keys(SOUNDS),
     ready: function () { return !!ctx; }
   };

@@ -15,24 +15,27 @@
   let state = load() || C.newState();
   let step = 'attr';
 
-  /* 主题：与角色数据分开存放（换角色不重置主题） */
+  /* 主题：与角色数据分开存放（换角色不重置主题）
+     六套配色：哥特 / 冷钢 / 虚空 / 绯红 / 苔原 / 紫晶 */
   const THEME_KEY = 'rt-chargen-theme';
-  const THEMES = ['gothic', 'steel', 'void'];
+  const THEMES = ['gothic', 'steel', 'void', 'crimson', 'verdant', 'amethyst'];
   function applyTheme(name) {
     const t = THEMES.indexOf(name) >= 0 ? name : 'gothic';
     document.body.setAttribute('data-theme', t);
     const sel = $('#themeSel');
     if (sel) sel.value = t;
-    const seg = document.querySelectorAll('#themeSeg .seg-btn');
+    const seg = document.querySelectorAll('#themeSeg .thm');
     for (let i = 0; i < seg.length; i++) {
-      seg[i].classList.toggle('on', seg[i].getAttribute('data-theme') === t);
+      const on = seg[i].getAttribute('data-theme') === t;
+      seg[i].classList.toggle('on', on);
+      seg[i].setAttribute('aria-pressed', on ? 'true' : 'false');
     }
   }
   function savedTheme() {
     try { return localStorage.getItem(THEME_KEY) || 'gothic'; } catch (e) { return 'gothic'; }
   }
 
-  /* 页眉上的音效 / 环境音 / 动效开关与主题按钮，始终与真实状态同步 */
+  /* 页眉上的音效 / 音乐 / 动效开关与主题按钮，始终与真实状态同步 */
   function syncChrome() {
     const sfxBtn = $('#sfxBtn');
     if (sfxBtn && window.RTSfx) {
@@ -41,12 +44,6 @@
       sfxBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       sfxBtn.textContent = on ? '音效' : '静音';
     }
-    const ambBtn = $('#ambBtn');
-    if (ambBtn && window.RTSfx) {
-      const on = RTSfx.ambientEnabled();
-      ambBtn.classList.toggle('on', on);
-      ambBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    }
     const fxBtn = $('#fxBtn');
     if (fxBtn && window.RTFX) {
       const on = RTFX.enabled();
@@ -54,7 +51,31 @@
       fxBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       fxBtn.textContent = on ? '动效' : '静态';
     }
+    if (window.RTMusic) paintMusic(RTMusic.state());
   }
+
+  /* 音乐按钮 + 迷你播放器（直接改 DOM，不触发整页重绘） */
+  function paintMusic(st) {
+    const btn = $('#bgmBtn');
+    if (btn) {
+      btn.classList.toggle('on', !!(st.on && st.playing));
+      btn.setAttribute('aria-pressed', st.on ? 'true' : 'false');
+      btn.disabled = !!st.failed;
+      btn.title = st.failed ? '背景音乐文件缺失（assets/audio/bgm.mp3）'
+        : (st.on ? '背景音乐：开（点击停止）' : '背景音乐：关（点击播放）');
+    }
+    const bar = $('#bgmBar');
+    if (!bar) return;
+    bar.classList.toggle('on', !!(st.on && st.playing));
+    bar.classList.toggle('fail', !!st.failed);
+    const t = $('#bgmTitle'), ar = $('#bgmArtist'), pr = $('#bgmProg'), cov = $('#bgmCover'), vol = $('#bgmVol');
+    if (t && t.textContent !== st.title) t.textContent = st.title;
+    if (ar && ar.textContent !== st.artist) ar.textContent = st.artist;
+    if (cov && st.cover && cov.getAttribute('src') !== st.cover) cov.setAttribute('src', st.cover);
+    if (pr) pr.style.width = Math.max(0, Math.min(100, (st.time / (st.duration || 1)) * 100)).toFixed(1) + '%';
+    if (vol && document.activeElement !== vol) vol.value = Math.round(st.vol * 100);
+  }
+
 
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 忽略隐私模式 */ }
@@ -699,6 +720,55 @@
   }
 
   /* ---------------- ⑦ 角色卡 ---------------- */
+
+  /* 九维属性雷达：内联 SVG（无第三方库），满环按 10 的倍数自动取整 */
+  function radarBlock(a) {
+    const list = R.ATTRS, n = list.length;
+    const vals = list.map(x => Math.max(0, +a[x.k].total || 0));
+    let max = 60;
+    for (let i = 0; i < n; i++) if (vals[i] > max) max = vals[i];
+    max = Math.ceil(max / 10) * 10;
+    const cx = 168, cy = 160, R0 = 104;
+    const ang = i => (-90 + i * (360 / n)) * Math.PI / 180;
+    const px = (i, k) => cx + Math.cos(ang(i)) * R0 * k;
+    const py = (i, k) => cy + Math.sin(ang(i)) * R0 * k;
+    const pair = (i, k) => px(i, k).toFixed(1) + ',' + py(i, k).toFixed(1);
+    const kOf = v => Math.max(0, Math.min(1, v / max));
+
+    let grid = '';
+    [0.25, 0.5, 0.75, 1].forEach(k => {
+      grid += `<polygon class="radar-ring${k === 1 ? ' out' : ''}" points="${list.map((x, i) => pair(i, k)).join(' ')}"/>`;
+    });
+
+    let axes = '', dots = '', labels = '';
+    list.forEach((x, i) => {
+      axes += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${px(i, 1).toFixed(1)}" y2="${py(i, 1).toFixed(1)}"/>`;
+      const k = kOf(vals[i]);
+      dots += `<circle class="radar-dot" cx="${px(i, k).toFixed(1)}" cy="${py(i, k).toFixed(1)}" r="2.7"/>`;
+      const lx = px(i, 1.1).toFixed(1), ly = py(i, 1.1).toFixed(1);
+      const c = Math.cos(ang(i));
+      const anchor = Math.abs(c) < 0.25 ? 'middle' : (c > 0 ? 'start' : 'end');
+      labels += `<text class="radar-lb" x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle">` +
+        `<tspan class="radar-nm">${esc(x.short)}</tspan><tspan class="radar-val" dx="3">${vals[i]}</tspan></text>`;
+    });
+
+    const area = list.map((x, i) => pair(i, kOf(vals[i]))).join(' ');
+    return `<div class="sheet-radar">
+        <div>
+          <svg class="radar" viewBox="0 0 336 320" role="img" aria-label="九维属性雷达图：${list.map((x, i) => x.name + vals[i]).join('、')}">
+            <g>${grid}${axes}</g>
+            <polygon class="radar-area" points="${area}"/>
+            <g>${dots}</g>
+            <g>${labels}</g>
+          </svg>
+          <span class="radar-scale">满环 ${max} · 每圈 ${max / 4}</span>
+        </div>
+        <ul class="radar-key">${list.map(x =>
+          `<li><i>${esc(x.short)}</i><span>${esc(x.name)}</span><b>${a[x.k].total}</b><sup>${a[x.k].bonus}</sup></li>`
+        ).join('')}</ul>
+      </div>`;
+  }
+
   function viewSheet(s) {
     const a = s.attrs, w = s.wounds, fo = s.fate, mv = s.move;
     const attrCells = R.ATTRS.map(x => `<div class="sa">
@@ -759,6 +829,7 @@
           <div><span class="lbl">玩家</span><b>${esc(state.meta.player || '—')}</b></div>
         </div>
         <div class="sheet-attrs">${attrCells}</div>
+        ${radarBlock(a)}
         <div class="sheet-row">
           <div class="box"><span class="lbl">承伤</span><b>${w.total}</b><i>${w.fromT}+${w.dice}+${w.flat}</i></div>
           <div class="box"><span class="lbl">命运点</span><b>${fo.total}</b><i>1d10=${fo.roll}→${fo.table}</i></div>
@@ -1037,16 +1108,21 @@
       }
     },
 
-    /* 音效 / 环境音 / 动效开关 */
+    /* 音效 / 背景音乐 / 动效开关 */
     toggleSfx() {
       if (!window.RTSfx) return;
       RTSfx.toggle();
       syncChrome();
     },
-    toggleAmbient() {
-      if (!window.RTSfx) return;
-      if (RTSfx.toggleAmbient()) sfx('open');
-      syncChrome();
+    toggleMusic() {
+      if (!window.RTMusic) return;
+      const on = !RTMusic.enabled();
+      if (on) { RTMusic.play(); sfx('open'); } else { RTMusic.stop(); sfx('close'); }
+      paintMusic(RTMusic.state());
+    },
+    setMusicVolume(v) {
+      if (!window.RTMusic) return;
+      RTMusic.setVolume((+v || 0) / 100);
     },
     toggleFx() {
       if (!window.RTFX) return;
@@ -1153,14 +1229,25 @@
   state = normalize(state);
   applyTheme(savedTheme());
 
-  /* 首次交互解锁音频；若之前开着环境音，手势后自动续上 */
+  /* 首次交互解锁音频；若上次开着背景音乐，手势后自动续上（浏览器禁止无手势自动播放） */
+  let audioUnlocked = false;
   function unlockAudio() {
-    if (!window.RTSfx) return;
-    RTSfx.unlock();
-    if (RTSfx.ambientEnabled()) RTSfx.ambientOn();
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    if (window.RTSfx) RTSfx.unlock();
+    if (window.RTMusic) {
+      RTMusic.unlock();
+      paintMusic(RTMusic.state());
+    }
   }
   ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
     document.addEventListener(ev, unlockAudio, { passive: true }));
+
+  /* 播放状态变化（曲目进度 / 暂停 / 文件缺失）同步到页眉与迷你播放器 */
+  if (window.RTMusic) {
+    RTMusic.onChange(paintMusic);
+    paintMusic(RTMusic.state());
+  }
 
   /* ---------------- 全局事件：悬浮卡 + 抽屉 ---------------- */
   const CHIP_SEL = '[data-skill],[data-trait],[data-talent]';
