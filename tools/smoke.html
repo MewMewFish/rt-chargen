@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>smoke</title>
+<link rel="stylesheet" href="../css/style.css"></head>
+<body>
+<nav id="hud"></nav>
+<aside id="steps"></aside>
+<main id="main"></main>
+<aside id="drawer"></aside>
+<div id="tip"></div>
+<pre id="log" style="color:#0f0;background:#000;padding:10px"></pre>
+<script src="../data/bundle.js"></script>
+<script src="../js/rules.js"></script>
+<script src="../js/calc.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/fx.js"></script>
+<script src="../js/app.js"></script>
+<script>
+/* 冒烟测试：用 Edge 无头模式打开本页，看 <pre id="log"> 是否全部 OK
+   msedge --headless=new --dump-dom file:///D:/AIsoft/rt-chargen/tools/smoke.html */
+const log = [];
+function t(name, fn) {
+  try { fn(); log.push('OK   ' + name); }
+  catch (e) { log.push('FAIL ' + name + ' :: ' + (e && e.message)); }
+}
+const cards = () => document.querySelectorAll('.gcard');
+const gearId = n => RTData.gear.find(g => g.name === n).id;
+
+t('渲染 步骤1 属性', () => App.go('attr'));
+t('掷骰全部', () => App.rollAll());
+t('切点数分配', () => App.setMode('buy'));
+t('加点', () => { App.alloc('WS', 1); App.alloc('Ag', 1); });
+t('渲染 步骤2 起源', () => App.go('origin'));
+t('选择家园世界', () => App.pickOrigin('homeworld', 'death'));
+t('选择生而有权', () => App.pickOrigin('birthright', 'mercenary'));
+t('选择虚空的诱惑', () => App.pickOrigin('temptation', 'stain'));
+t('选择考验', () => App.pickOrigin('trial', 'war'));
+t('选择动机', () => App.pickOrigin('motivation', 'wealth'));
+t('选择职业', () => App.pickCareer('行商浪人'));
+t('起源选择项', () => { App.setChoice('death', 'death-hardened', '见怪不怪'); App.setChoice('stain', 'stain-path', '叛逆哲学'); });
+t('渲染 步骤3 经验', () => App.go('xp'));
+t('购买进阶', () => App.buyRow(1, 0));
+t('购买属性提升', () => App.buyAttr('WP', 0));
+t('切换等阶页', () => App.setXpTab(2));
+
+t('天赋速查已渲染', () => {
+  const n = document.querySelectorAll('#talentList [data-talent]').length;
+  if (n !== RTData.talents.length) throw new Error('标签数 ' + n + '/' + RTData.talents.length);
+});
+t('搜索天赋「灵能」', () => App.filterTalents('灵能'));
+t('搜索结果收窄', () => {
+  const n = document.querySelectorAll('#talentList [data-talent]').length;
+  if (!n || n >= RTData.talents.length) throw new Error('搜索结果数 ' + n);
+});
+t('清空搜索复原', () => {
+  App.filterTalents('');
+  const n = document.querySelectorAll('#talentList [data-talent]').length;
+  if (n !== RTData.talents.length) throw new Error('复原后 ' + n);
+});
+t('打开天赋抽屉', () => App.openTalent('灵能等级'));
+t('天赋正文与出处', () => {
+  const d = document.getElementById('drawer');
+  if (d.className.indexOf('on') < 0) throw new Error('抽屉未打开');
+  const txt = d.textContent;
+  if (txt.indexOf('第四章：天赋') < 0 || txt.length < 80) throw new Error('正文异常');
+});
+t('天赋抽屉显示可选组别', () => {
+  App.openTalent('双持客');
+  if (document.getElementById('drawer').textContent.indexOf('远程，近战') < 0) throw new Error('缺组别');
+});
+t('关闭天赋抽屉', () => {
+  App.closeDrawer();
+  if (document.getElementById('drawer').className.indexOf('on') >= 0) throw new Error('未关闭');
+});
+t('进阶表的天赋行是标签', () => {
+  App.setXpTab(1);
+  if (!document.querySelectorAll('#main table [data-talent]').length) throw new Error('进阶表无天赋标签');
+});
+
+t('渲染 步骤4 生命', () => App.go('life'));
+t('写名字', () => App.setMeta('name', '杨·凡·雅斯托巴尔'));
+t('渲染 步骤5 舰船', () => App.go('fleet'));
+t('掷利润因子', () => App.rollProfit());
+t('设定舰船点', () => App.setShipSpent(10));
+
+t('渲染 步骤6 装备', () => App.go('gear'));
+t('装备库有卡片', () => { if (cards().length < 20) throw new Error('卡片数 ' + cards().length); });
+t('切换分类 护甲', () => App.setGearFilter({ cat: '护甲', q: '' }));
+t('护甲分类含板甲', () => {
+  const names = [].map.call(cards(), e => e.querySelector('.gname').textContent);
+  if (names.indexOf('封建世界板甲') < 0) throw new Error('未见板甲：' + names.slice(0, 3));
+});
+t('搜索 爆弹', () => App.setGearFilter({ cat: '全部', q: '爆弹' }));
+t('搜索结果非空', () => { if (!cards().length) throw new Error('无结果'); });
+t('加入库内装备', () => App.addGearItem(gearId('封建世界板甲')));
+t('重复加入累加数量', () => App.addGearItem(gearId('封建世界板甲')));
+t('数量 -1', () => App.gearQty(0, -1));
+t('写备注', () => App.setGearNote(0, '家族遗物'));
+t('已选清单渲染', () => {
+  const txt = document.getElementById('main').textContent;
+  if (txt.indexOf('封建世界板甲') < 0 || txt.indexOf('30.0 kg') < 0) throw new Error('清单缺物品或重量');
+});
+t('自定义装备', () => {
+  const name = document.getElementById('gearName'), note = document.getElementById('gearNote');
+  name.value = '家传圣物'; note.value = 'GM 特许';
+  App.addGear();
+  if (document.getElementById('main').textContent.indexOf('家传圣物') < 0) throw new Error('自定义未加入');
+});
+t('收购检定', () => { document.getElementById('rarityMod').value = 0; App.acquire(); });
+t('收购结果输出', () => { if (!/目标/.test(document.getElementById('acqResult').textContent)) throw new Error('无结果'); });
+t('收购预填稀有度', () => { App.acquireItem(gearId('动力装甲')); if (+document.getElementById('rarityMod').value !== -30) throw new Error('未预填 -30'); });
+
+t('打开技能抽屉', () => App.openSkill('导航'));
+t('抽屉含技能正文', () => {
+  const d = document.getElementById('drawer');
+  if (!/on/.test(d.className) || d.textContent.indexOf('技能使用') < 0) throw new Error('抽屉内容异常');
+});
+t('关闭抽屉', () => { App.closeDrawer(); if (/on/.test(document.getElementById('drawer').className)) throw new Error('未关闭'); });
+t('打开特性说明', () => App.openTrait('撕裂'));
+t('特性有正文', () => {
+  const txt = document.getElementById('drawer').textContent;
+  if (txt.indexOf('撕裂') < 0 || txt.length < 30) throw new Error('特性正文过短');
+});
+t('打开装备详情', () => App.openGear(gearId('激光步枪')));
+t('装备详情含数据', () => { if (document.getElementById('drawer').textContent.indexOf('1d10+3 E') < 0) throw new Error('缺伤害数据'); });
+
+t('渲染 步骤7 角色卡', () => App.go('sheet'));
+t('读取角色卡', () => {
+  const txt = document.getElementById('sheet').textContent;
+  if (!/承伤/.test(txt) || !/命运点/.test(txt)) throw new Error('角色卡缺少关键字段');
+});
+t('角色卡含装备与技能标签', () => {
+  const txt = document.getElementById('sheet').textContent;
+  if (txt.indexOf('封建世界板甲') < 0) throw new Error('缺装备');
+  if (!document.querySelectorAll('#sheet [data-skill]').length) throw new Error('技能未渲染为标签');
+});
+t('角色卡天赋为标签', () => {
+  if (!document.querySelectorAll('#sheet [data-talent]').length) throw new Error('天赋未渲染为标签');
+});
+t('点击天赋标签打开抽屉', () => {
+  const chip = document.querySelector('#sheet [data-talent]');
+  chip.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  const d = document.getElementById('drawer');
+  if (d.className.indexOf('on') < 0 || d.textContent.indexOf('天赋 ·') < 0) throw new Error('点击未打开抽屉');
+  App.closeDrawer();
+});
+
+t('切换主题 冷钢', () => App.setTheme('steel'));
+t('主题已应用', () => { if (document.body.getAttribute('data-theme') !== 'steel') throw new Error('主题未生效'); });
+t('切回哥特', () => App.setTheme('gothic'));
+t('主题已还原', () => { if (document.body.getAttribute('data-theme') !== 'gothic') throw new Error('未还原'); });
+
+/* ---------- 3.0：角色卡折叠 / 音效 / 动效 ---------- */
+t('角色卡技能默认只显示标签', () => {
+  const f = document.getElementById('foldSkills');
+  if (!f) throw new Error('缺技能折叠区块');
+  if (f.classList.contains('open')) throw new Error('默认不应展开');
+  if (!f.querySelectorAll('[data-skill]').length) throw new Error('标签缺失');
+});
+t('展开技能全文', () => {
+  App.expandSheet('skills', true);
+  const f = document.getElementById('foldSkills');
+  if (!f.classList.contains('open')) throw new Error('未展开');
+  if (f.querySelectorAll('.fit').length < 1) throw new Error('无条目');
+  if (f.textContent.replace(/\s/g, '').length < 200) throw new Error('正文过短');
+});
+t('展开天赋全文', () => {
+  App.expandSheet('talents', true);
+  const f = document.getElementById('foldTalents');
+  if (!f.classList.contains('open')) throw new Error('未展开');
+  if (!f.querySelectorAll('.fit').length) throw new Error('无天赋条目');
+});
+t('一键收起为标签', () => {
+  App.expandSheet('all', false);
+  if (document.querySelector('.sheet .fold.open')) throw new Error('仍有展开的区块');
+  if (!document.querySelectorAll('#sheet [data-talent]').length) throw new Error('天赋标签丢失');
+});
+t('音效模块可用', () => {
+  if (!window.RTSfx || RTSfx.sounds.length < 6) throw new Error('音效模块缺失');
+});
+t('音效开关可切换', () => {
+  const was = RTSfx.enabled();
+  RTSfx.setEnabled(!was);
+  if (RTSfx.enabled() === was) throw new Error('未切换');
+  RTSfx.setEnabled(was);
+  if (RTSfx.enabled() !== was) throw new Error('未还原');
+});
+t('动效模块可用', () => {
+  if (!window.RTFX || typeof RTFX.transition !== 'function') throw new Error('动效模块缺失');
+});
+t('动效开关可切换', () => {
+  const was = RTFX.enabled();
+  RTFX.setEnabled(!was);
+  if (RTFX.enabled() === was) throw new Error('未切换');
+  RTFX.setEnabled(was);
+});
+t('步骤导航带序号', () => {
+  const s = document.querySelector('#steps .step');
+  if (!s || !s.getAttribute('data-n')) throw new Error('缺序号');
+});
+t('切换步骤会标记已访问', () => {
+  App.go('attr');
+  if (!document.querySelectorAll('#steps .step.done').length) throw new Error('无已访问标记');
+});
+t('HUD 含计数动画数据', () => {
+  if (!document.querySelectorAll('#hud [data-count]').length) throw new Error('缺 data-count');
+});
+
+document.getElementById('log').textContent = log.join('\n');
+const okN = log.filter(x => x.startsWith('OK')).length;
+const failN = log.length - okN;
+document.title = failN ? 'SMOKE FAIL' : 'SMOKE PASS';
+/* 供无头模式断言：纯 ASCII，避免控制台编码干扰 */
+document.body.setAttribute('data-smoke', okN + '/' + log.length);
+</script>
+</body></html>
+

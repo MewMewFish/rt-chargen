@@ -1,0 +1,17 @@
+素材输出目录：D:\AIsoft\rt-chargen\assets\img
+hero 源图 1199x1383
+  hero.jpg            1100x1269   261.8 KB
+  hero-sm.jpg          420x484     38.8 KB
+aquila 裁切后 912x504
+  aquila.png           384x212     16.1 KB
+  aquila-mark.png       96x53       1.7 KB
+  favicon.png           64x64       0.8 KB
+banners 源图 1024x1536
+  自动分带 [[86, 438], [504, 860], [894, 1342]]
+  banner-1.png         560x203     28.3 KB
+  banner-2.png         560x204     25.3 KB
+  banner-3.png         560x255     29.7 KB
+  skull-frame.png      460x708     62.2 KB
+  servitor.png         168x315      8.4 KB
+  paper.jpg            256x256      4.0 KB
+合计 11 个文件，477.1 KB

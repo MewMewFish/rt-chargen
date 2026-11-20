@@ -1,0 +1,284 @@
+{
+  "_readme": "起源之路数据，出自《行商浪人核心规则书 V0.3》第一章 P10-P29。mods=属性修正; trained=受训技能; basic=视为未训练的基础技能; talents=直接获得的天赋; choices=需要玩家选择的项; wounds/fate/profit=承伤/命运点/利润因子修正。",
+  "woundsFormula": "坚韧加值×2 + 1d5 (+flat)",
+  "rows": [
+    { "id": "homeworld", "label": "家园世界", "options": ["death", "void", "forge", "hive", "imperial", "noble"] },
+    { "id": "birthright", "label": "生而有权", "options": ["scavvy", "rogue", "mercenary", "creed", "scholar", "vainglorious"] },
+    { "id": "temptation", "label": "虚空的诱惑", "options": ["stain", "crime", "mutiny", "duty", "faithful", "fated"] },
+    { "id": "trial", "label": "考验与苦痛", "options": ["war", "pressganged", "calamity", "shipwreck", "darkjourney", "vendetta"] },
+    { "id": "motivation", "label": "动机", "options": ["endurance", "wealth", "vengeance", "fame", "dignity", "status"] },
+    { "id": "career", "label": "职业道途", "options": ["超然星语者", "首席武装员", "虚空伍长", "勘探者", "传教士", "管家", "导航者", "行商浪人"] }
+  ],
+  "options": {
+    "death": {
+      "name": "死亡世界", "row": "homeworld",
+      "mods": { "S": 5, "T": 5, "WP": -5, "Fel": -5 },
+      "basic": ["求生"],
+      "talents": ["近战武器训练（原始）"],
+      "choices": [
+        { "key": "death-hardened", "label": "刚毅：起始天赋二选一", "kind": "talent", "options": ["见怪不怪", "抵抗（毒素）"] }
+      ],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 2 },
+      "fate": [[5, 2], [10, 3]],
+      "notes": ["正式场合的所有互动技能 -10", "抵抗压制与震惊 +10", "环境有毒动植物常见"]
+    },
+    "void": {
+      "name": "虚空生人", "row": "homeworld",
+      "mods": { "S": -5, "WP": 5 },
+      "trained": ["口语（船舶方言）"],
+      "basic": ["导航（群星）", "飞控（航天器）"],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 0 },
+      "fate": [[5, 3], [10, 4]],
+      "notes": ["神佑：花费命运点时掷1d10，出9则不消耗该点", "恶兆：与非虚空生人人类社交 -5", "虚空适应：零/低重力不视为困难地形"]
+    },
+    "forge": {
+      "name": "铸造世界", "row": "homeworld",
+      "mods": { "WS": -5, "Int": 5 },
+      "basic": ["基础知识（科技）", "基础知识（机械修会）"],
+      "talents": ["一敲就好"],
+      "choices": [
+        { "key": "forge-attr", "label": "正如目的：任一属性 +3", "kind": "attr", "amount": 3, "options": ["WS", "BS", "S", "T", "Ag", "Int", "Per", "WP", "Fel"] }
+      ],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 1 },
+      "fate": [[5, 2], [9, 3], [10, 4]],
+      "notes": ["帝国教条知识检定 -10", "与教会成员正式场合社交 -5"]
+    },
+    "hive": {
+      "name": "巢都世界", "row": "homeworld",
+      "mods": { "T": -5, "Fel": 5 },
+      "trained": ["口语（巢都方言）"],
+      "basic": ["科技使用"],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 1 },
+      "fate": [[5, 2], [8, 3], [10, 4]],
+      "notes": ["人群中奔跑/冲锋不视为困难地形", "求生 -10", "非文明环境所有智力检定 -5", "先攻 +1"]
+    },
+    "imperial": {
+      "name": "帝国世界", "row": "homeworld",
+      "mods": { "WP": 3 },
+      "basic": ["基础知识（帝国教条）", "基础知识（帝国）", "基础知识（战争）", "读写能力", "口语（高哥特语）"],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 0 },
+      "fate": [[8, 3], [10, 4]],
+      "notes": ["受到祝福的无知：禁忌知识检定 -5"]
+    },
+    "noble": {
+      "name": "贵族生人", "row": "homeworld",
+      "mods": { "WP": -5, "Fel": 5 },
+      "basic": ["读写能力", "口语（高哥特语）", "口语（低哥特语）"],
+      "talents": ["平等待遇（贵族）"],
+      "choices": [
+        { "key": "noble-peer", "label": "高层关系：额外一个平等待遇", "kind": "talent",
+          "options": ["平等待遇（学者）", "平等待遇（机械神教）", "平等待遇（内政部）", "平等待遇（星语者）", "平等待遇（国教会）", "平等待遇（政府）", "平等待遇（商人）", "平等待遇（军事）", "平等待遇（地下世界）"] }
+      ],
+      "wounds": { "tbMul": 2, "dice": "1d5", "flat": 0 },
+      "fate": [[3, 2], [9, 3], [10, 4]],
+      "profit": 1,
+      "notes": ["礼仪：与高层/正式场合互动 +10", "财富的传承：团队起始利润因子 +1", "家族世仇：与GM共同设定一个强大敌人"]
+    },
+    "scavvy": {
+      "name": "拾荒者", "row": "birthright",
+      "choices": [
+        { "key": "scavvy-talent", "label": "天赋二选一", "kind": "talent", "options": ["难以辨认", "抵抗（恐惧）"] },
+        { "key": "scavvy-attr", "label": "自选意志或敏捷 +3", "kind": "attr", "amount": 3, "options": ["WP", "Ag"] }
+      ],
+      "notes": ["自选 1d5 腐化点或 1d5 错乱点"]
+    },
+    "rogue": {
+      "name": "恶棍", "row": "birthright",
+      "trained": ["巧手诡计"],
+      "choices": [
+        { "key": "rogue-attr", "label": "自选智力或感知 +3", "kind": "attr", "amount": 3, "options": ["Int", "Per"] }
+      ],
+      "notes": ["自选 1d5 腐化点或 1d5 错乱点"]
+    },
+    "mercenary": {
+      "name": "佣兵", "row": "birthright",
+      "mods": { "Fel": -5 },
+      "trained": ["恐吓"],
+      "talents": ["快手拔枪"],
+      "choices": [
+        { "key": "merc-attr", "label": "自选武器技能或弹道技能 +5", "kind": "attr", "amount": 5, "options": ["WS", "BS"] }
+      ],
+      "notes": ["承受 1d5 错乱点"]
+    },
+    "creed": {
+      "name": "信条之子", "row": "birthright",
+      "mods": { "WS": -3 },
+      "talents": ["不屈信念"],
+      "choices": [
+        { "key": "creed-attr", "label": "自选意志或社交 +3", "kind": "attr", "amount": 3, "options": ["WP", "Fel"] }
+      ]
+    },
+    "scholar": {
+      "name": "学者", "row": "birthright",
+      "mods": { "T": -3 },
+      "choices": [
+        { "key": "scholar-main", "label": "逻辑（受训基础技能）或 平等待遇（学院）", "kind": "mixed",
+          "options": ["逻辑（受训）", "平等待遇（学院）"] },
+        { "key": "scholar-attr", "label": "自选智力或社交 +3", "kind": "attr", "amount": 3, "options": ["Int", "Fel"] }
+      ]
+    },
+    "vainglorious": {
+      "name": "自负者", "row": "birthright",
+      "mods": { "Per": -3 },
+      "talents": ["颓废者"],
+      "choices": [
+        { "key": "vain-attr", "label": "自选敏捷或社交 +3", "kind": "attr", "amount": 3, "options": ["Ag", "Fel"] }
+      ],
+      "notes": ["承受 1d5 腐化点"]
+    },
+    "stain": {
+      "name": "污迹", "row": "temptation",
+      "choices": [
+        { "key": "stain-path", "label": "选择一条道路", "kind": "variant", "options": [
+          { "label": "疯狂", "mods": { "T": 3 }, "talents": ["平等待遇（疯子）"],
+            "subChoices": [{ "key": "stain-mad", "label": "自选 -3 社交 或 -1 命运点", "kind": "variant",
+              "options": [{ "label": "社交 -3", "mods": { "Fel": -3 } }, { "label": "命运点 -1", "fateFlat": -1 }] }] },
+          { "label": "叛逆哲学", "mods": { "WP": 3 }, "talents": ["敌视（国教会）"] }
+        ] }
+      ]
+    },
+    "crime": {
+      "name": "罪行", "row": "temptation",
+      "choices": [
+        { "key": "crime-path", "label": "选择你的罪行后果", "kind": "variant", "options": [
+          { "label": "被通缉的逃犯", "talents": ["敌视（法务部）", "平等待遇（地下世界）"] },
+          { "label": "被犯罪男爵追捕", "mods": { "Per": 3 }, "talents": ["敌视（地下世界）"] },
+          { "label": "被审判并最终缺乏证据", "mods": { "Fel": -5 }, "notes": ["获得一个劣质仿生肢体"] }
+        ] }
+      ]
+    },
+    "mutiny": {
+      "name": "叛逆", "row": "temptation",
+      "choices": [
+        { "key": "mutiny-path", "label": "选择你的叛逆形态", "kind": "variant", "options": [
+          { "label": "惯犯", "talents": ["敌视（法务部）", "抵抗（审讯）"], "basic": ["掩蔽"] },
+          { "label": "自由思考者", "mods": { "WP": -3 }, "talents": ["敌视（国教会）"],
+            "subChoices": [{ "key": "mutiny-attr", "label": "自选智力或感知 +3", "kind": "attr", "amount": 3, "options": ["Int", "Per"] }] },
+          { "label": "黑暗幻想者", "talents": ["黑暗灵魂"], "basic": ["禁忌知识（择一）"],
+            "notes": ["承受自选 1d5+1 腐化点或 1d5+1 错乱点"] }
+        ] }
+      ]
+    },
+    "duty": {
+      "name": "责任使然", "row": "temptation",
+      "choices": [
+        { "key": "duty-path", "label": "你的责任对象", "kind": "variant", "options": [
+          { "label": "对王座的责任", "mods": { "WP": 3 }, "notes": ["若意志≥40，额外获得傲慢护甲天赋"] },
+          { "label": "对王朝的责任", "mods": { "T": -3 }, "talents": ["竞争对手（行商浪人家族）"] }
+        ] }
+      ]
+    },
+    "faithful": {
+      "name": "信徒", "row": "temptation",
+      "choices": [
+        { "key": "faith-path", "label": "帝皇给你的印记", "kind": "variant", "options": [
+          { "label": "受祝的伤痕", "notes": ["恐吓 +10，魅力 -10", "获得一个劣质（仿生/疤痕类）标记"] },
+          { "label": "不安的澄澈", "mods": { "WP": 5 }, "notes": ["自选 -5 社交 或 1d10 错乱点"] },
+          { "label": "信徒的宠爱", "mods": { "Fel": 5, "T": -5 }, "talents": ["平等待遇（国教会）"] }
+        ] }
+      ]
+    },
+    "fated": {
+      "name": "被命运选中", "row": "temptation",
+      "choices": [
+        { "key": "fated-path", "label": "命运的走向", "kind": "variant", "options": [
+          { "label": "真理探求者", "mods": { "WP": -3 }, "talents": ["深思熟虑", "敌视（学院或国教会）"] },
+          { "label": "亲外派", "notes": ["与外星种族/文化打交道时社交 +10"] },
+          { "label": "命定伟人", "fateFlat": 1, "notes": ["承受 1d10+1 错乱点"] }
+        ] }
+      ]
+    },
+    "war": {
+      "name": "战争之手", "row": "trial",
+      "choices": [
+        { "key": "war-training", "label": "战争余烬：一个自选武器训练天赋 或 鲤鱼打挺", "kind": "talent",
+          "options": ["近战武器训练（原始）", "近战武器训练（通用）", "手枪武器训练（通用）", "基础武器训练（通用）", "重型武器训练（通用）", "喷火武器训练（通用）", "投掷武器训练（通用）", "鲤鱼打挺"] },
+        { "key": "war-enemy", "label": "宿敌（旧敌）", "kind": "talent",
+          "options": ["宿敌（兽人）", "宿敌（灵族）", "宿敌（变种人）", "宿敌（混沌崇拜者）", "宿敌（帝国卫队）", "宿敌（帝国海军）", "宿敌（虚空海盗）"] }
+      ],
+      "notes": ["宿敌之颜：与死敌打交道社交 -10，受刺激时需意志检定"]
+    },
+    "pressganged": {
+      "name": "强征入伍", "row": "trial",
+      "choices": [
+        { "key": "press-skill", "label": "不情愿的帮凶：一个无前置条件的技能", "kind": "skill", "options": [] },
+        { "key": "press-basic", "label": "额外一个基础知识技能（或已有基础知识 +1 级）", "kind": "skill", "options": [] }
+      ],
+      "notes": ["珍爱自由：面对监禁/失去自由需意志检定"]
+    },
+    "calamity": {
+      "name": "灾祸", "row": "trial",
+      "talents": ["浅睡者"],
+      "choices": [
+        { "key": "calamity-talent", "label": "适应逆境：二选一", "kind": "talent", "options": ["强韧体魄", "钢铁神经"] }
+      ],
+      "profit": -1,
+      "notes": ["困苦回响：团队起始利润因子 -1"]
+    },
+    "shipwreck": {
+      "name": "弃船", "row": "trial",
+      "fateFlat": -1,
+      "choices": [
+        { "key": "wreck-gain", "label": "困顿重重：求生技能（或+1级）或 黑暗灵魂天赋", "kind": "mixed",
+          "options": ["求生（技能）", "黑暗灵魂（天赋）"] }
+      ],
+      "notes": ["花费命运点恢复承伤时可重掷（必须接受第二个结果）", "厄运缠身：命运点 -1；与非友方虚空人士社交 -5"]
+    },
+    "darkjourney": {
+      "name": "黑暗之旅", "row": "trial",
+      "choices": [
+        { "key": "dark-gain", "label": "人不当知之事：禁忌知识（择一，或已有+1级）或 抵抗（恐惧）", "kind": "mixed",
+          "options": ["禁忌知识（择一）（技能）", "抵抗（恐惧）（天赋）"] }
+      ],
+      "notes": ["被黑暗标记：获得 1d5 错乱点"]
+    },
+    "vendetta": {
+      "name": "血仇", "row": "trial",
+      "trained": ["探询"],
+      "choices": [
+        { "key": "vendetta-talent", "label": "血债血偿：二选一", "kind": "talent", "options": ["命硬", "偏执狂"] }
+      ],
+      "notes": ["探询技能（已有则该技能 +1 级）", "不再受辱：受严重冒犯时需意志检定"]
+    },
+    "endurance": {
+      "name": "忍耐", "row": "motivation",
+      "woundsFlat": 1,
+      "notes": ["承伤 +1"]
+    },
+    "wealth": {
+      "name": "财富", "row": "motivation",
+      "fateFlat": 1,
+      "notes": ["命运点 +1"]
+    },
+    "vengeance": {
+      "name": "复仇", "row": "motivation",
+      "choices": [
+        { "key": "vengeance-enemy", "label": "宿敌（自选一个）", "kind": "talent",
+          "options": ["宿敌（兽人）", "宿敌（灵族）", "宿敌（变种人）", "宿敌（混沌崇拜者）", "宿敌（国教会）", "宿敌（法务部）", "宿敌（行商浪人家族）"] }
+      ]
+    },
+    "fame": {
+      "name": "名声", "row": "motivation",
+      "choices": [
+        { "key": "fame-talent", "label": "气势威严 或 平等待遇（择一）", "kind": "talent",
+          "options": ["气势威严", "平等待遇（贵族）", "平等待遇（学院）", "平等待遇（军事）", "平等待遇（国教会）", "平等待遇（地下世界）", "平等待遇（商人）", "平等待遇（政府）", "平等待遇（机械神教）", "平等待遇（内政部）", "平等待遇（星语者）"] }
+      ]
+    },
+    "dignity": {
+      "name": "尊严", "row": "motivation",
+      "choices": [
+        { "key": "dignity-gain", "label": "传家宝（1d100 或自选）或 坚韧 +3", "kind": "mixed",
+          "options": ["上古科技激光手枪（极品）", "安茹时代的链锯剑（极品）", "先祖之印（互动+10）", "圣佑壳甲（极品）", "圣德鲁斯的圣物箱（国教会互动+20）", "坚韧 +3"] }
+      ]
+    },
+    "status": {
+      "name": "地位", "row": "motivation",
+      "choices": [
+        { "key": "status-talent", "label": "才华横溢（择一）或 平等待遇（择一）", "kind": "talent",
+          "options": ["才华横溢（择一）", "平等待遇（贵族）", "平等待遇（学院）", "平等待遇（军事）", "平等待遇（国教会）", "平等待遇（地下世界）", "平等待遇（商人）", "平等待遇（政府）", "平等待遇（机械神教）", "平等待遇（内政部）", "平等待遇（星语者）"] }
+      ]
+    }
+  }
+}
+
+

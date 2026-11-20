@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="renderer" content="webkit">
+<meta name="force-rendering" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e0f12">
+<title>行商浪人 · 角色卡创建器 3.0（核心规则书 V0.3）</title>
+<link rel="icon" href="assets/img/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="gothic">
+<div id="oldBrowser" class="oldbrowser"></div>
+
+<!-- 启动页：徽记 + 进度条，加载完成自动淡出，点击可跳过 -->
+<div id="splash" class="splash">
+  <div class="splash-bg" aria-hidden="true"></div>
+  <div class="splash-inner">
+    <img class="splash-aquila" src="assets/img/aquila.png" alt="帝国双头鹰">
+    <p class="splash-kicker">ROGUE TRADER · CORE RULEBOOK V0.3</p>
+    <h2 class="splash-title">行商浪人</h2>
+    <p class="splash-sub">角色卡创建器 <b>3.0</b></p>
+    <div class="splash-bar"><i></i></div>
+    <p class="splash-hint">点击任意处进入 · 角色自动保存在本地</p>
+  </div>
+</div>
+
+<!-- 步骤切换过场：暗场 + 骷髅饰带 + 步骤名 -->
+<div id="stepFx" class="stepfx" aria-hidden="true">
+  <div class="stepfx-shade"></div>
+  <div class="stepfx-inner">
+    <img class="stepfx-orn" src="assets/img/banner-2.png" alt="">
+    <b class="stepfx-t"></b>
+    <span class="stepfx-s"></span>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <img class="brand-mark" src="assets/img/aquila-mark.png" alt="">
+    <div class="brand-text">
+      <h1>行商浪人 <span>角色卡创建器 3.0</span></h1>
+      <p>Rogue Trader · 核心规则书 V0.3 · 技能 P112-132 / 天赋 P133-160 / 军械库 P166-226</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <div class="seg" id="themeSeg" role="group" aria-label="配色主题">
+      <button class="seg-btn on" data-theme="gothic" onclick="App.setTheme('gothic')">帝国哥特</button>
+      <button class="seg-btn" data-theme="steel" onclick="App.setTheme('steel')">机仆冷钢</button>
+      <button class="seg-btn" data-theme="void" onclick="App.setTheme('void')">虚空赤褐</button>
+    </div>
+    <div class="toggle-row" role="group" aria-label="音效与动效">
+      <button class="btn ghost tbtn on" id="sfxBtn" onclick="App.toggleSfx()" aria-pressed="true">音效</button>
+      <button class="btn ghost tbtn" id="ambBtn" onclick="App.toggleAmbient()" aria-pressed="false">环境音</button>
+      <button class="btn ghost tbtn on" id="fxBtn" onclick="App.toggleFx()" aria-pressed="true">动效</button>
+    </div>
+    <button class="btn ghost" onclick="App.replayIntro()">重看过场</button>
+    <button class="btn ghost" onclick="window.print()">打印</button>
+  </div>
+</header>
+
+<nav id="hud" class="hud"></nav>
+
+<div class="layout">
+  <aside id="steps" class="steps"></aside>
+  <main id="main" class="main"></main>
+</div>
+
+<aside id="drawer" class="drawer" aria-live="polite"></aside>
+<div id="tip" class="tip"></div>
+
+<footer class="foot">
+  <img class="foot-mark" src="assets/img/aquila-mark.png" alt="">
+  <p>规则与数据取自《行商浪人核心规则书 V0.3》（第一章创建角色 P6-36、第二章职业道途 P37-111、第三章技能 P112-132、第四章天赋 P133-160、第五章军械库 P166-226）。</p>
+  <p>角色自动保存到浏览器本地（localStorage），可在“角色卡”页导出 / 导入 JSON。音效由浏览器实时合成，无外部音频文件。</p>
+  <p class="foot-ver">版本 3.0 · 音效 / 过场动画 / 角色卡折叠 / 界面重制</p>
+</footer>
+
+<script src="data/bundle.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/app.js"></script>
+<script>
+/* 启动页：脚本位于 body 末尾，此时元素已就绪 */
+(function () {
+  if (window.RTFX) { try { RTFX.boot(); } catch (e) { /* 忽略 */ } }
+  var s = document.getElementById('splash');
+  if (s && window.RTFX && !RTFX.enabled()) s.className += ' done';
+})();
+
+/* 老内核兜底：只写 ES5，任何浏览器都能执行。
+   IE 内核 / 旧版双核浏览器的兼容模式不支持 ES6 语法与 CSS 变量，页面会白屏，这里给出可读提示。 */
+(function () {
+  var ok = !!(window.App && window.RTData && window.RTCalc);
+  var el = document.getElementById('oldBrowser');
+  if (ok || !el) return;
+  var sp = document.getElementById('splash');
+  if (sp) sp.style.display = 'none';
+  el.className = 'oldbrowser on';
+  el.innerHTML = '<b>这个浏览器内核太旧，无法运行本工具（页面会白屏）。</b>' +
+    '<span>脚本使用 ES6 语法、样式使用 CSS 变量，IE 内核（包括 360 / QQ / 搜狗等双核浏览器的“兼容模式”）都不支持。' +
+    '请改用新版 Chrome / Edge / Firefox 打开；双核浏览器请在地址栏把内核切到“极速 / Blink”。</span>';
+})();
+</script>
+</body>
+</html>
